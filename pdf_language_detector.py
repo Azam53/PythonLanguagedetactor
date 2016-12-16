@@ -1,0 +1,87 @@
+"""
+Problem Defination : To extract text from pdf document and print the text removing stopwords in a file
+Author             : Azam Ansari
+
+Instructions to followed while executing the below program 
+Step 1 : In the main function please specify the pdf document which you want to examine in place of dummy.pdf
+Step 2 : Execute the program and then you will found a plain_text.txt file in the same directory where this program
+"""
+import sys
+
+try:
+    from pyPdf import PdfFileReader     # library for pdf to text extraction
+except ImportError:
+    print '[!!!!] You need to install pypdf'
+
+try:
+    from nltk import wordpunct_tokenize
+    from nltk.corpus import stopwords
+except ImportError:
+    print '[!!!] You need to install nltk'
+
+#----------------------------------------------------------------------
+def get_pdf_content(pdf_file_path):
+    with open(pdf_file_path) as f:
+        pdf_reader = PdfFileReader(f)
+        content = "\n".join(page.extractText().strip() for page in pdf_reader.pages)
+        content = ' '.join(content.split())
+        return content
+
+#----------------------------------------------------------------------
+def _calculate_languages_ratios(text):
+    """
+    This function calculates the probability of the stopwords of language and returns a Dictionary
+    """
+
+    languages_ratios = {}
+
+    tokens = wordpunct_tokenize(text)
+    words = [word.lower() for word in tokens]
+
+    for language in stopwords.fileids():
+        stopwords_set = set(stopwords.words(language))
+        words_set = set(words)
+        common_elements = words_set.intersection(stopwords_set)
+        
+        languages_ratios[language] = len(common_elements) 
+
+    return languages_ratios
+
+
+#----------------------------------------------------------------------
+def detect_language(text):
+    """
+    This Function detects the language of the text based on the highest stopwords found in the detected language 
+    """
+
+    ratios = _calculate_languages_ratios(text)
+
+    most_rated_language = max(ratios, key=ratios.get)
+
+    return most_rated_language
+
+#---------------------------------------------------------------------------
+    """
+    Below function removes Stopwords from the pdf extracted text and prints the text in a file name as plain_text.txt
+    """
+def remove_stopwords(text,language):
+    s = set(stopwords.words(language))
+    filtered_plain_text = filter(lambda w: not w in s,text.split())
+    myfile = open('plain_text.txt', 'w')
+    myfile.writelines('The language of the document::'+language+'\n'+'The plaintext of pdf::')
+    myfile.write(str(filtered_plain_text))
+    plain = str(filtered_plain_text)
+    #plain = " ".join(str(f) for f in filtered_plain_text)
+    myfile.write(plain)
+    myfile.close()
+    
+    
+
+#---------------------------------------------------------------------------
+
+if __name__=='__main__':
+
+    pdf_content = get_pdf_content('dummy.pdf')
+    text = pdf_content 
+    language = detect_language(text)
+    remove_stopwords(text,language)
